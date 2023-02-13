@@ -1,7 +1,10 @@
+import secrets
+
+import mptt
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-import secrets
+from mptt.models import MPTTModel, TreeForeignKey
 
 
 class Poll(models.Model):
@@ -11,7 +14,7 @@ class Poll(models.Model):
     active = models.BooleanField(default=True)
 
     def user_can_vote(self, user):
-        """ 
+        """
         Return False if user already voted
         """
         user_votes = user.vote_set.all()
@@ -28,8 +31,15 @@ class Poll(models.Model):
         res = []
         for choice in self.choice_set.all():
             d = {}
-            alert_class = ['primary', 'secondary', 'success',
-                           'danger', 'dark', 'warning', 'info']
+            alert_class = [
+                'primary',
+                'secondary',
+                'success',
+                'danger',
+                'dark',
+                'warning',
+                'info',
+            ]
 
             d['alert_class'] = secrets.choice(alert_class)
             d['text'] = choice.choice_text
@@ -37,8 +47,9 @@ class Poll(models.Model):
             if not self.get_vote_count:
                 d['percentage'] = 0
             else:
-                d['percentage'] = (choice.get_vote_count /
-                                   self.get_vote_count)*100
+                d['percentage'] = (
+                    choice.get_vote_count / self.get_vote_count
+                ) * 100
 
             res.append(d)
         return res
@@ -66,3 +77,53 @@ class Vote(models.Model):
 
     def __str__(self):
         return f'{self.poll.text[:15]} - {self.choice.choice_text[:15]} - {self.user.username}'
+
+
+class Genre(MPTTModel):
+    name = models.CharField(max_length=50, unique=True)
+    parent = TreeForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+    )
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
+
+class SampleData(models.Model):
+    pk_id = models.AutoField(primary_key=True)
+    product_id = models.IntegerField(null=True, blank=True)
+    market_id = models.IntegerField(null=True, blank=True)
+    ppg = models.CharField(max_length=255, null=True, blank=True)
+    retailer = models.CharField(max_length=255, null=True, blank=True)
+    nsv_cal = models.FloatField(null=True, blank=True)
+    list_price_cal = models.FloatField(null=True, blank=True)
+    list_price_cal_new = models.FloatField(null=True, blank=True)
+    list_price_cal_per_change_ip = models.FloatField(null=True, blank=True)
+    base_price_cal = models.FloatField(null=True, blank=True)
+    base_price_cal_new = models.FloatField(null=True, blank=True)
+    base_price_cal_per_change_ip = models.FloatField(null=True, blank=True)
+    aup_cal = models.FloatField(null=True, blank=True)
+    aup_cal_new = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return self.ppg + " - " + self.retailer
+
+
+class SampleDataMptt(MPTTModel):
+    datarow = models.ForeignKey(
+        SampleData, null=True, blank=True, on_delete=models.CASCADE
+    )
+    parent = TreeForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+    )
+
+    class MPTTMeta:
+        order_insertion_by = ['datarow']

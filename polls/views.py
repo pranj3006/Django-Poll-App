@@ -1,11 +1,17 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.contrib import messages
-from .models import Poll, Choice, Vote
-from .forms import PollAddForm, EditPollForm, ChoiceAddForm
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from polls.serializers import SampleDataMpttSerializers, SampleTreeSerializer
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
+from .forms import ChoiceAddForm, EditPollForm, PollAddForm
+from .models import Choice, Genre, Poll, SampleDataMptt, Vote
 
 
 @login_required()
@@ -64,12 +70,17 @@ def polls_add(request):
                 poll.owner = request.user
                 poll.save()
                 new_choice1 = Choice(
-                    poll=poll, choice_text=form.cleaned_data['choice1']).save()
+                    poll=poll, choice_text=form.cleaned_data['choice1']
+                ).save()
                 new_choice2 = Choice(
-                    poll=poll, choice_text=form.cleaned_data['choice2']).save()
+                    poll=poll, choice_text=form.cleaned_data['choice2']
+                ).save()
 
                 messages.success(
-                    request, "Poll & Choices added successfully.", extra_tags='alert alert-success alert-dismissible fade show')
+                    request,
+                    "Poll & Choices added successfully.",
+                    extra_tags='alert alert-success alert-dismissible fade show',
+                )
 
                 return redirect('polls:list')
         else:
@@ -92,14 +103,19 @@ def polls_edit(request, poll_id):
         form = EditPollForm(request.POST, instance=poll)
         if form.is_valid:
             form.save()
-            messages.success(request, "Poll Updated successfully.",
-                             extra_tags='alert alert-success alert-dismissible fade show')
+            messages.success(
+                request,
+                "Poll Updated successfully.",
+                extra_tags='alert alert-success alert-dismissible fade show',
+            )
             return redirect("polls:list")
 
     else:
         form = EditPollForm(instance=poll)
 
-    return render(request, "polls/poll_edit.html", {'form': form, 'poll': poll})
+    return render(
+        request, "polls/poll_edit.html", {'form': form, 'poll': poll}
+    )
 
 
 @login_required
@@ -108,8 +124,11 @@ def polls_delete(request, poll_id):
     if request.user != poll.owner:
         return redirect('home')
     poll.delete()
-    messages.success(request, "Poll Deleted successfully.",
-                     extra_tags='alert alert-success alert-dismissible fade show')
+    messages.success(
+        request,
+        "Poll Deleted successfully.",
+        extra_tags='alert alert-success alert-dismissible fade show',
+    )
     return redirect("polls:list")
 
 
@@ -126,7 +145,10 @@ def add_choice(request, poll_id):
             new_choice.poll = poll
             new_choice.save()
             messages.success(
-                request, "Choice added successfully.", extra_tags='alert alert-success alert-dismissible fade show')
+                request,
+                "Choice added successfully.",
+                extra_tags='alert alert-success alert-dismissible fade show',
+            )
             return redirect('polls:edit', poll.id)
     else:
         form = ChoiceAddForm()
@@ -150,7 +172,10 @@ def choice_edit(request, choice_id):
             new_choice.poll = poll
             new_choice.save()
             messages.success(
-                request, "Choice Updated successfully.", extra_tags='alert alert-success alert-dismissible fade show')
+                request,
+                "Choice Updated successfully.",
+                extra_tags='alert alert-success alert-dismissible fade show',
+            )
             return redirect('polls:edit', poll.id)
     else:
         form = ChoiceAddForm(instance=choice)
@@ -170,7 +195,10 @@ def choice_delete(request, choice_id):
         return redirect('home')
     choice.delete()
     messages.success(
-        request, "Choice Deleted successfully.", extra_tags='alert alert-success alert-dismissible fade show')
+        request,
+        "Choice Deleted successfully.",
+        extra_tags='alert alert-success alert-dismissible fade show',
+    )
     return redirect('polls:edit', poll.id)
 
 
@@ -193,7 +221,10 @@ def poll_vote(request, poll_id):
     choice_id = request.POST.get('choice')
     if not poll.user_can_vote(request.user):
         messages.error(
-            request, "You already voted this poll!", extra_tags='alert alert-warning alert-dismissible fade show')
+            request,
+            "You already voted this poll!",
+            extra_tags='alert alert-warning alert-dismissible fade show',
+        )
         return redirect("polls:list")
 
     if choice_id:
@@ -204,7 +235,10 @@ def poll_vote(request, poll_id):
         return render(request, 'polls/poll_result.html', {'poll': poll})
     else:
         messages.error(
-            request, "No choice selected!", extra_tags='alert alert-warning alert-dismissible fade show')
+            request,
+            "No choice selected!",
+            extra_tags='alert alert-warning alert-dismissible fade show',
+        )
         return redirect("polls:detail", poll_id)
     return render(request, 'polls/poll_result.html', {'poll': poll})
 
@@ -221,3 +255,51 @@ def endpoll(request, poll_id):
         return render(request, 'polls/poll_result.html', {'poll': poll})
     else:
         return render(request, 'polls/poll_result.html', {'poll': poll})
+
+
+def show_genres(request):
+    return render(request, "genres.html", {'genres': Genre.objects.all()})
+
+
+import json
+
+
+class SampleDataViewSet(generics.ListAPIView):
+    serializer_class = SampleDataMpttSerializers
+
+    def get_queryset(self, queryset=None):
+        queryset = SampleDataMptt.objects.filter(level=0)
+        queryset = queryset.get_cached_trees()
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        """
+        GET API handler for User metadata
+        """
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return HttpResponse(json.dumps(serializer.data))
+
+
+class SampleListAPIView(generics.ListAPIView):
+    queryset = SampleDataMptt.objects.all()
+    serializer_class = SampleTreeSerializer
+
+    def get(self, request, *args, **kwargs):
+        qs = (
+            self.get_queryset()
+            .get_descendants(include_self=True)
+            .get_cached_trees()
+        )
+        serializer = self.get_serializer(qs, many=True)
+        print(serializer.data)
+        return HttpResponse(json.dumps(serializer.data))
+
+
+# def show_sample_data(request):
+#     return HttpResponse(SampleDataMptt.objects.all())
+# return render(
+#     request,
+#     "polls/sample_data.html",
+#     {'sample_data': SampleDataMptt.objects.all()},
+# )

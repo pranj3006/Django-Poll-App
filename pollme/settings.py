@@ -1,3 +1,15 @@
+'''
+File: settings.py
+Project: pollme
+Created Date: Th Jan 2023 2:12:06 pm
+Author: Pranjal Gharat
+-----
+Last Modified: Th Jan 2023 2:30:35 pm
+Modified By: Pranjal Gharat
+-----
+Copyright (c) 2023 Fractal
+'''
+
 """
 Django settings for pollme project.
 
@@ -39,6 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'polls.apps.PollsConfig',
     'accounts.apps.AccountsConfig',
+    "rest_framework",
+    'mptt',
 ]
 
 MIDDLEWARE = [
@@ -120,6 +134,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+MPTT_ADMIN_LEVEL_INDENT = 20

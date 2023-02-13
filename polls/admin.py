@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Poll, Choice, Vote
+
+from .models import Choice, Genre, Poll, Vote
 
 
 @admin.register(Poll)
@@ -22,3 +23,11 @@ class VoteAdmin(admin.ModelAdmin):
     list_display = ["choice", "poll", "user"]
     search_fields = ["choice__choice_text", "poll__text", "user__username"]
     autocomplete_fields = ["choice", "poll", "user"]
+
+
+from mptt.admin import MPTTModelAdmin
+from polls.models import Genre, SampleData, SampleDataMptt
+
+admin.site.register(SampleData)
+admin.site.register(Genre, MPTTModelAdmin)
+admin.site.register(SampleDataMptt, MPTTModelAdmin)
