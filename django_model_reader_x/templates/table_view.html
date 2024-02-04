@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- <div id="database-schema"></div> -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div id="appDetailsContainer" class="container mt-3"></div>
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 90%;
+      margin: 10px auto;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Extracted data from the Django context
+        const schemaData = {{ schema_data|safe }};
+        
+        
+        // Function to render the dynamic content
+        function renderAppDetails(data) {
+            var container = $('#appDetailsContainer');
+            
+            data.lst_apps.forEach(function(appName) {
+            var appDiv = $('<div class="container mt-3">');
+            var appTitle = $('<h2 class="mb-3" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="' + appName + '">' + appName + '</h2>');
+            var appDetails = $('<div class="collapse" id="' + appName + '">');
+            
+            
+            // Loop through each model in the app
+            data.dct_data[appName].lst_app_models.forEach(function(modelName) {
+                var modelData=data.dct_data[appName][modelName]
+                // Create a table for each app
+                var modelDiv = $('<div class="container mt-3">');
+                var modelTitle = $('<h2 class="mb-3" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="' + modelName + '">' + modelName + '</h2>');
+                var modelDescription = $('<h3 class="mb-3">' + data.dct_data[appName][modelName].model_description + '</h3>');
+                var modelDetails = $('<div class="collapse" id="' + modelName + '">');
+                
+                var table = $('<table class="table table-bordered" id="' + modelName+ '">');
+                table.append('<thead><tr><th>Field Name</th><th>Datatype</th><th>Related ForeignKey Table</th></tr></thead>');
+                var tbody = $('<tbody>');
+
+                if (typeof modelData.lst_column_details !== 'undefined')
+                {
+                    $.each(modelData.lst_column_details, function (_, columnDetail) {
+                        // Create a row for each column
+                        var row = $('<tr>');
+                        row.append('<td>' + columnDetail.field_name + '</td>');
+                        row.append('<td>' + columnDetail.datatype + '</td>');                        
+                        row.append('<td>' + (columnDetail.datatype === 'ForeignKey' ? columnDetail.related_app_name +'.'+ columnDetail.related_model_name : '') + '</td>');
+                        tbody.append(row);
+                    });
+                }
+                table.append(tbody);
+                modelDetails.append(table);
+                modelDiv.append(modelTitle,modelDescription,modelDetails);
+                
+                appDetails.append(modelDiv);
+
+            });
+                        
+            appDiv.append(appTitle, appDetails);
+            container.append(appDiv);
+
+            // for (var modelName in data.dct_data[appName]) {
+            // if (data.dct_data[appName].hasOwnProperty(modelName)) {
+            //     var modelData = data.dct_data[appName][modelName];
+            //     var modelDiv = $('<div>');
+            //     var modelTitle = $('<h4>' + modelName + '</h4>');
+            //     var dbTable = $('<p><strong>Database Table:</strong> ' + modelData.db_table_name + '</p>');
+                
+            //     if (typeof modelData.lst_primary_fields !== 'undefined')
+            //     {
+            //         var primaryFields = $('<p><strong>Primary Fields:</strong> ' + modelData.lst_primary_fields.join(', ') + '</p>');
+            //     }
+            //     else 
+            //     {
+            //         var primaryFields = $('<p><strong>Primary Fields:</strong></p>');                    
+            //     }
+            //     var columnsList = $('<ul>');
+            //     if (typeof modelData.lst_column_details !== 'undefined')
+            //     {
+            //         modelData.lst_column_details.forEach(function(columnDetail) {
+            //             var columnItem = $('<li><strong>' + columnDetail.field_name + '</strong> (' + columnDetail.datatype + ')');
+            //             if (columnDetail.datatype === 'ForeignKey') {
+            //                 columnItem.append(' to ' + columnDetail.related_model_name + ' in ' + columnDetail.related_app_name);
+            //             }
+            //         columnsList.append(columnItem);
+            //         });
+            //     }   
+
+            //     modelDiv.append(modelTitle, dbTable, primaryFields, columnsList);
+            //     appDetails.append(modelDiv);
+            // }
+            // }
+
+            // appDiv.append(appTitle, appDetails);
+            // container.append(appDiv);
+            });
+        }
+        renderAppDetails(schemaData);
+    });
+</script>    
+{% endblock %}

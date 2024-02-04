@@ -22,4 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls', namespace="accounts")),
     path('polls/', include('polls.urls', namespace="polls")),
+    # path('django_model_reader/', include('django_model_reader.urls')),
+    path('django_model_reader_x/', include('django_model_reader_x.urls'))
 ]
