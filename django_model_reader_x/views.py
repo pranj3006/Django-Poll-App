@@ -1,19 +1,19 @@
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django_model_reader_x.model_reader_service import  ModelReaderService
-from django.http import HttpResponse
-from django.http import JsonResponse
-# Create your views here.
+from django_model_reader_x.services.django_model_reader_service import \
+    DjangoModelReaderService as ModelReaderService
 
+# Create your views here.
 
 def get_models_data(request):
     serv_mdreader = ModelReaderService()
-    schema_data = serv_mdreader.get_all_models()
+    schema_data = serv_mdreader.get_all_models_data()
     
     return JsonResponse(schema_data,status=200)
 
 def view_models_list(request):
     serv_mdreader = ModelReaderService()
-    schema_data = serv_mdreader.get_all_models()
+    schema_data = serv_mdreader.get_all_models_data()
     context = {
         'title': 'Database Tables List',
         'schema_data': schema_data,
@@ -22,7 +22,7 @@ def view_models_list(request):
 
 def view_models_scehma(request):
     serv_mdreader = ModelReaderService()
-    schema_data = serv_mdreader.get_all_models()
+    schema_data = serv_mdreader.get_all_models_data()
     context = {
         'title': 'Database Schema Visualization',
         'schema_data': schema_data,
