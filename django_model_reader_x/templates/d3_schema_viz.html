@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .node {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 20px;
+      width: 300px;
+      cursor: move;
+  }
+  column-list {
+    max-height: 150px; /* Adjust as needed */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 5px;
+  }
+</style>
+</head>
+<body>
+<div id="diagram"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const schemaData = [
+  {
+    key: "Table1",
+    items: ["Column1", "Column2", "Column3"]
+  },
+  {
+    key: "Table2",
+    items: ["ColumnA", "ColumnB", "ColumnC", "ColumnD", "ColumnE", "ColumnF"]
+  }
+];
+
+const width = 600;
+const height = 400;
+
+const svg = d3.select("#diagram")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height);
+
+const linkGroup = svg.append("g").attr("class", "links");
+const nodeGroup = svg.append("g").attr("class", "nodes");
+
+const links = [
+  { source: schemaData[0], target: schemaData[1] }
+];
+
+// Create links between nodes
+const linksEnter = linkGroup.selectAll(".link")
+  .data(links)
+  .enter()
+  .append("path")
+  .attr("class", "link")
+  .attr("stroke", "black")
+  .attr("stroke-width", 2)
+  .attr("marker-end", "url(#arrowhead)");
+
+// Arrowhead marker
+svg.append("defs").append("marker")
+  .attr("id", "arrowhead")
+  .attr("viewBox", "-10 -5 10 10")
+  .attr("refX", -5)
+  .attr("refY", 0)
+  .attr("markerWidth", 6)
+  .attr("markerHeight", 6)
+  .attr("orient", "auto")
+  .append("path")
+  .attr("d", "M 0,0 m -5,-5 L 0,0 L -5,5 Z")
+  .attr("fill", "black");
+
+const simulation = d3.forceSimulation(schemaData)
+  .force("charge", d3.forceManyBody().strength(-200))
+  .force("link", d3.forceLink(links).id(d => d.key))
+  .force("x", d3.forceX(width / 2))
+  .force("y", d3.forceY(height / 2))
+  .on("tick", () => {
+    nodes.attr("transform", d => `translate(${d.x},${d.y})`);
+    linksEnter.attr("d", d => `M${d.source.x},${d.source.y} L${d.target.x},${d.target.y}`);
+  });
+
+// Create nodes
+const nodes = nodeGroup.selectAll(".node")
+  .data(schemaData)
+  .enter()
+  .append("g")
+  .attr("class", "node");
+
+nodes.append("rect")
+  .attr("width", 200)
+  .attr("height", 200)
+  .attr("fill", "#e8f1ff")
+  .attr("stroke", "#ccc")
+  .attr("stroke-width", 3);
+
+nodes.append("text")
+  .attr("x", 100)
+  .attr("y", 30)
+  .attr("text-anchor", "middle")
+  .text(d => d.key);
+
+nodes.each(function(d) {
+  const columnList = d3.select(this)
+    .append("g")
+    .attr("class", "column-list")
+    .attr("transform", "translate(10, 50)");
+
+  columnList.selectAll("text")
+    .data(d.items)
+    .enter()
+    .append("text")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * 20)
+    .text(d => d);
+});
+</script>
+   <!-- window.addEventListener('DOMContentLoaded', init); -->
+
+
+</script>
+{% endblock %}
